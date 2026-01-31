@@ -50,7 +50,6 @@ export function RecordsProvider({ children }: { children: React.ReactNode }) {
     setBusy(true);
     setErr(null);
     try {
-      await new Promise((r) => setTimeout(r, 5000)); // Simulate network delay
       const response = await fetch('/api/mock/records');
       if (!response.ok) {
         throw new Error(`Failed to load records: ${response.statusText}`);
