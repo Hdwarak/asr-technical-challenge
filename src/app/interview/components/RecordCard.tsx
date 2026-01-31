@@ -52,14 +52,18 @@ export default function RecordCard({ record, onSelect }: RecordCardProps) {
           </Badge>
         </CardAction>
       </CardHeader>
-      {record.note && (
-        <CardContent>
+        <CardContent >
+        {record.note?.trim() ? (
           <p className="text-xs sm:text-sm text-muted-foreground">
             Note: {record.note}
           </p>
-        </CardContent>
-      )}
-      <CardFooter className="border-t pt-4 flex justify-end">
+        ) : (
+          <p className="text-xs sm:text-sm text-muted-foreground italic">
+            No notes available for this record.
+          </p>
+        )}
+      </CardContent>
+      <CardFooter className="border-t pt-4 mt-auto flex justify-end">
         <Button variant="secondary" onClick={() => onSelect(record)}>
           Review
         </Button>

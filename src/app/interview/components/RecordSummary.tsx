@@ -23,7 +23,7 @@ export default function RecordSummary() {
   ];
   return (
     <section aria-label="Record status summary" className="space-y-3">
-      <div className="flex items-baseline justify-between">
+      <div className="space-y-1">
         <h3 className="text-base sm:text-lg font-semibold tracking-tight">
           Summary
         </h3>

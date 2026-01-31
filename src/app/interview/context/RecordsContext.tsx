@@ -50,12 +50,13 @@ export function RecordsProvider({ children }: { children: React.ReactNode }) {
     setBusy(true);
     setErr(null);
     try {
+      await new Promise((r) => setTimeout(r, 5000)); // Simulate network delay
       const response = await fetch('/api/mock/records');
       if (!response.ok) {
         throw new Error(`Failed to load records: ${response.statusText}`);
       }
-      const incoming = (await response.json()) as RecordItem[];
-      setData(incoming);
+      const recordsData = (await response.json()) as RecordItem[];
+      setData(recordsData);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       setErr(message);
@@ -83,13 +84,15 @@ export function RecordsProvider({ children }: { children: React.ReactNode }) {
       setData((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
 
       const prevRecord = data.find((r) => r.id === id);
-      if (prevRecord && updates.status && prevRecord.status !== updates.status) {
+      if (prevRecord && updates.status && (prevRecord.status !== updates.status || prevRecord.note !== updates.note)) {
         const entry: RecordHistoryEntry = {
-          id,
+          id, 
           previousStatus: prevRecord.status,
           newStatus: updates.status,
           note: updates.note,
           timestamp: new Date().toISOString(),
+          name: prevRecord.name,
+
         };
         setLog((prevHist) => [...prevHist, entry]);
       }

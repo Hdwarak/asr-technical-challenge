@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
-
-import { useRecords } from "../context/RecordsContext";
+import { Loader2 } from "lucide-react";
+import { useRecords } from "../hooks/useRecords";
 import type { RecordItem } from "../types";
 import RecordCard from "./RecordCard";
 import RecordDetailDialog from "./RecordDetailDialog";
 import { Button } from "@/components/ui/button";
+import HistoryLog from "./HistoryLog";
+import RecordFilter from "./RecordFilter";
+import RecordSummary from "./RecordSummary";
+import AlertMessage from "./AlertMessage";
 
 /**
  * RecordList orchestrates the interview page by fetching records via
@@ -28,105 +32,68 @@ export default function RecordList() {
     counts[item.status] += 1;
   });
 
-  const display = records;
+  const filteredRecords =
+  fltr === "all"
+    ? records
+    : records.filter((record) => record.status === fltr);
+
 
   return (
     <div className="space-y-6">
+      <RecordSummary />
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
             Records
           </h2>
           <p className="text-sm text-muted-foreground">
-            {records.length} total • {display.length} showing
+            {records.length} total • {filteredRecords.length} showing
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="w-56">
-            <label className="block text-sm font-medium mb-1">
-              Filter by status
-            </label>
-            <select
-              value={fltr}
-              onChange={(e) =>
-                setFltr(e.target.value as "all" | RecordItem["status"])
-              }
-              className="w-full border rounded-md p-2 text-sm bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="all">all</option>
-              <option value="pending">pending</option>
-              <option value="approved">approved</option>
-              <option value="flagged">flagged</option>
-              <option value="needs_revision">needs_revision</option>
-            </select>
+          <div className="flex items-end gap-2 w-full max-w-xs">
+            <RecordFilter value={fltr} onChange={setFltr} />
+            <div className="mt-2">
+              <Button variant="ghost" onClick={() => refresh()} disabled={loading}>
+                Reload
+              </Button>
+            </div>
           </div>
-          <Button variant="ghost" onClick={() => refresh()} disabled={loading}>
-            Reload
-          </Button>
         </div>
       </div>
-      {error && <p className="text-sm text-destructive">Error: {error}</p>}
-      {loading && (
-        <p className="text-sm text-muted-foreground">Loading records...</p>
-      )}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-        {(Object.keys(counts) as Array<keyof typeof counts>).map((status) => (
-          <div
-            key={status}
-            className="rounded-lg border bg-card/50 p-3 sm:p-4 flex flex-col items-center justify-center capitalize shadow-sm hover:bg-card transition-colors"
-          >
-            <span className="text-xs sm:text-sm text-muted-foreground">
-              {status.replace("_", " ")}
-            </span>
-            <span className="text-lg sm:text-xl font-semibold tracking-tight">
-              {counts[status]}
-            </span>
-          </div>
-        ))}
+
+    {loading ? (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="animate-spin w-8 h-8 text-gray-400 mb-2" />
+        <span className="text-gray-500">Loading records…</span>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {display.map((record) => (
-          <RecordCard key={record.id} record={record} onSelect={setSel} />
-        ))}
-      </div>
-      {sel && <RecordDetailDialog record={sel} onClose={() => setSel(null)} />}
-      {records.length === 0 && !loading && !error && (
-        <p className="text-sm text-muted-foreground">No records found.</p>
-      )}
-      <div className="space-y-2 mt-4">
-        <h3 className="text-base sm:text-lg font-semibold tracking-tight">
-          History
-        </h3>
-        {history && history.length > 0 ? (
-          <ul className="space-y-2 max-h-60 overflow-y-auto pr-2">
-            {history.map((entry, idx: number) => (
-              <li
-                key={idx}
-                className="text-xs border rounded-md p-2 bg-card/50"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Record {entry.id}</span>
-                  <span className="text-muted-foreground">
-                    {new Date(entry.timestamp).toLocaleString()}
-                  </span>
-                </div>
-                <div className="mt-1">
-                  {entry.previousStatus} → {entry.newStatus}
-                </div>
-                {entry.note && (
-                  <p className="mt-1 text-muted-foreground">
-                    Note: {entry.note}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-muted-foreground text-sm">
-            No status changes yet.
-          </p>
-        )}
-      </div>
+    ) : error ? (
+      <AlertMessage
+        type="error"
+        title="Error:"
+        message={error}
+        onRetry={refresh}
+        retryLabel="Retry"
+      />
+    ) : records.length === 0 ? (
+      <AlertMessage
+        type="info"
+        title="Info:"
+        message="No records found."
+        onRetry={refresh}
+        retryLabel="Retry"
+      />
+    ) : (
+      <>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredRecords.map((record) => (
+            <RecordCard key={record.id} record={record} onSelect={setSel} />
+          ))}
+          {sel && <RecordDetailDialog record={sel} onClose={() => setSel(null)} />}
+        </div>
+        <HistoryLog />
+      </>
+    )}
     </div>
   );
 }

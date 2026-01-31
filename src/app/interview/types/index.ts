@@ -31,4 +31,6 @@ export interface RecordHistoryEntry {
   note?: string;
   /** ISO timestamp when the update occurred */
   timestamp: string;
+  /** Name of the record */
+  name: string;
 }

@@ -21,13 +21,14 @@ import {
 } from "@/components/ui/select";
 
 import type { RecordItem, RecordStatus } from "../types";
+import { useRecords } from "../context/RecordsContext";
 
 interface RecordDetailDialogProps {
   record: RecordItem;
   onClose: () => void;
 }
 
-/**
+ /**
  * RecordDetailDialog allows reviewers to inspect a specimen’s details and
  * update its status and accompanying note in a focused modal flow. Review
  * actions are performed via the Status dropdown, while the note captures
@@ -39,12 +40,31 @@ export default function RecordDetailDialog({
 }: RecordDetailDialogProps) {
   const [status, setStatus] = useState<RecordStatus>(record.status);
   const [note, setNote] = useState<string>(record.note ?? "");
+  const [noteError, setNoteError] = useState<string | null>(null);
+  const { updateRecord } = useRecords();
   const statusOptions: RecordStatus[] = [
     "pending",
     "approved",
     "flagged",
     "needs_revision",
   ];
+
+const onSave = async () => {
+  try{
+    console.log("Saving record with status:", status, "and note:", note);
+     const requireNoteStatuses = [ "flagged", "needs_revision"];
+    if (requireNoteStatuses.includes(status) && note.trim() === "") {
+      setNoteError("Please provide a note for the selected status.");
+      return;
+    }
+    else{
+    await updateRecord(record.id, { status, note });
+    onClose();
+    }
+  } catch (error) {
+    console.error("Failed to update record:", error);
+  }
+  };
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -89,13 +109,18 @@ export default function RecordDetailDialog({
             <p className="mt-1 text-xs text-muted-foreground">
               Notes help other reviewers understand decisions.
             </p>
+            {noteError && (
+              <p className="mt-1 text-xs text-red-600">{noteError}</p>
+            )}
           </div>
         </div>
         <DialogFooter className="mt-6">
-          <Button variant="secondary" onClick={() => onClose()}>
+          <Button variant="ghost" onClick={() => onClose()}>
             Close
           </Button>
-          <Button variant="default">Save</Button>
+          <Button variant="default" onClick={onSave}>
+            Save
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
